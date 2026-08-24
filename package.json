@@ -1,0 +1,18 @@
+{
+  "name": "finger-tracking-studio",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Real-time hand and finger tracking studio using MediaPipe",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0 --port 5173",
+    "build": "vite build",
+    "preview": "vite preview --host 0.0.0.0 --port 4173"
+  },
+  "devDependencies": {
+    "vite": "^5.4.10"
+  },
+  "dependencies": {
+    "@mediapipe/tasks-vision": "^0.10.18"
+  }
+}

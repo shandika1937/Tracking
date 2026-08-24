@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no"
+    />
+    <meta name="theme-color" content="#0a0f1c" />
+    <meta name="color-scheme" content="dark" />
+    <title>Finger Tracking Studio · Realtime Hand CV</title>
+    <meta
+      name="description"
+      content="A browser-based studio that tracks your hands and fingers in real time using on-device computer vision."
+    />
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='14' fill='%235ec8ff'/><path d='M9 17l3 7 3-5 3 5 3-7 3 4' fill='none' stroke='%230a0f1c' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'/></svg>" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
+    />
+    <link rel="stylesheet" href="/src/styles/main.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header class="topbar">
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 32 32" width="28" height="28">
+              <defs>
+                <linearGradient id="grad" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stop-color="#5ec8ff" />
+                  <stop offset="50%" stop-color="#7cffb2" />
+                  <stop offset="100%" stop-color="#c97cff" />
+                </linearGradient>
+              </defs>
+              <circle cx="16" cy="16" r="13" fill="none" stroke="url(#grad)" stroke-width="2" />
+              <path
+                d="M10 18c2 1 3 3 6 3s4-2 6-3M11 12v3M15 11v4M19 12v3M22 14v2"
+                stroke="url(#grad)"
+                stroke-width="2"
+                stroke-linecap="round"
+                fill="none"
+              />
+            </svg>
+          </div>
+          <div class="brand-text">
+            <h1>Finger Tracking Studio</h1>
+            <span>Realtime on-device hand CV · MediaPipe Tasks Vision</span>
+          </div>
+        </div>
+        <div class="topbar-meta">
+          <span class="privacy-pill" title="All processing runs locally in your browser.">
+            <span class="dot"></span> Camera processing: Local
+          </span>
+        </div>
+      </header>
+
+      <div id="error-banner" class="error-banner" role="alert" aria-live="polite">
+        <div class="error-content">
+          <strong id="error-title">Something went wrong</strong>
+          <span id="error-message"></span>
+          <small id="error-hint"></small>
+        </div>
+        <button id="error-close" aria-label="Dismiss">×</button>
+      </div>
+
+      <main class="main">
+        <section class="stage-card">
+          <div class="stage-header">
+            <div class="mode-row" role="tablist" aria-label="Tracking mode">
+              <button class="mode-btn active" data-mode="hand" role="tab" aria-selected="true">
+                <span class="mode-ico">🖐️</span><span>Hand</span>
+              </button>
+              <button class="mode-btn" data-mode="finger" role="tab" aria-selected="false">
+                <span class="mode-ico">☝️</span><span>Fingers</span>
+              </button>
+              <button class="mode-btn" data-mode="cursor" role="tab" aria-selected="false">
+                <span class="mode-ico">🎯</span><span>Cursor</span>
+              </button>
+              <button class="mode-btn" data-mode="gesture" role="tab" aria-selected="false">
+                <span class="mode-ico">✨</span><span>Gesture</span>
+              </button>
+              <button class="mode-btn" data-mode="multi" role="tab" aria-selected="false">
+                <span class="mode-ico">👐</span><span>Demo</span>
+              </button>
+            </div>
+            <div class="stage-actions">
+              <button id="start-btn" class="primary">Start Camera</button>
+              <button id="stop-btn" class="ghost" disabled>Stop</button>
+              <button id="switch-btn" class="ghost" disabled title="Switch camera">⇄</button>
+              <button id="mirror-btn" class="ghost" title="Mirror video">⇌</button>
+              <button id="fullscreen-btn" class="ghost" title="Fullscreen">⛶</button>
+              <button id="tracking-btn" class="ghost active" title="Toggle tracking">Tracking: On</button>
+            </div>
+          </div>
+
+          <div id="stage" class="stage">
+            <video id="camera" playsinline muted autoplay></video>
+            <canvas id="overlay"></canvas>
+            <div id="demo-panel" class="demo-panel">
+              <canvas id="demo-canvas"></canvas>
+            </div>
+            <div class="stage-empty" id="stage-empty">
+              <div class="stage-empty-icon" aria-hidden="true">
+                <svg viewBox="0 0 64 64" width="56" height="56">
+                  <defs>
+                    <linearGradient id="emptyGrad" x1="0" y1="0" x2="1" y2="1">
+                      <stop offset="0%" stop-color="#5ec8ff" />
+                      <stop offset="50%" stop-color="#7cffb2" />
+                      <stop offset="100%" stop-color="#c97cff" />
+                    </linearGradient>
+                  </defs>
+                  <circle cx="32" cy="32" r="28" fill="none" stroke="url(#emptyGrad)" stroke-width="2" opacity="0.5"/>
+                  <path d="M22 38c2 1 4 3 10 3s8-2 10-3M24 26v6M30 24v8M36 26v6M42 30v4"
+                    stroke="url(#emptyGrad)" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+                </svg>
+              </div>
+              <div class="stage-empty-title">Ready when you are</div>
+              <div class="stage-empty-text">Press <strong>Start Camera</strong> and grant camera access.<br/>All processing runs locally in your browser.</div>
+            </div>
+            <div class="stage-overlay-status">
+              <span class="status-dot"></span>
+              <span id="status-text">Idle. Click "Start Camera" to begin.</span>
+            </div>
+            <div class="stage-overlay-fps" title="Frames per second">
+              <span class="fps-label">FPS</span>
+              <span id="fps-value">--</span>
+            </div>
+            <div class="stage-overlay-hint">
+              <span>Show your hand to the camera. Move closer for more detail.</span>
+            </div>
+          </div>
+        </section>
+
+        <aside class="side">
+          <div class="panel">
+            <div class="panel-head">
+              <h2>Status</h2>
+            </div>
+            <div class="panel-body stat-grid">
+              <div class="stat">
+                <div class="stat-label">FPS</div>
+                <div class="stat-value" id="fps-value-side">--</div>
+              </div>
+              <div class="stat">
+                <div class="stat-label">Processing</div>
+                <div class="stat-value" id="processing-value">-- ms</div>
+              </div>
+              <div class="stat">
+                <div class="stat-label">Hands</div>
+                <div class="stat-value" id="hands-value">0</div>
+              </div>
+              <div class="stat">
+                <div class="stat-label">Confidence</div>
+                <div class="stat-value" id="confidence-value">0%</div>
+              </div>
+              <div class="stat">
+                <div class="stat-label">Gesture</div>
+                <div class="stat-value" id="gesture-value">--</div>
+              </div>
+              <div class="stat">
+                <div class="stat-label">Resolution</div>
+                <div class="stat-value" id="resolution-value">--</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head">
+              <h2>Pinch</h2>
+            </div>
+            <div class="panel-body pinch-grid">
+              <div class="stat">
+                <div class="stat-label">Distance</div>
+                <div class="stat-value" id="pinch-distance-value">--</div>
+              </div>
+              <div class="stat">
+                <div class="stat-label">Threshold</div>
+                <div class="stat-value" id="pinch-threshold-value">0.060</div>
+              </div>
+              <div class="stat wide">
+                <div class="stat-label">Status</div>
+                <div class="stat-value">
+                  <span id="pinch-status-value" class="pinch-status">FALSE</span>
+                </div>
+              </div>
+              <div class="slider-row">
+                <label for="pinch-slider">Threshold</label>
+                <input id="pinch-slider" type="range" min="20" max="150" step="1" value="60" />
+                <span class="slider-value" id="pinch-value">0.060</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head">
+              <h2>Finger Tracking</h2>
+              <span class="panel-sub">Live landmark coordinates</span>
+            </div>
+            <div class="panel-body finger-table-wrap">
+              <table class="finger-table">
+                <thead>
+                  <tr>
+                    <th>Finger</th>
+                    <th>Hand</th>
+                    <th>X</th>
+                    <th>Y</th>
+                    <th>ΔX</th>
+                    <th>State</th>
+                  </tr>
+                </thead>
+                <tbody id="finger-rows">
+                  <tr>
+                    <td colspan="6" class="empty">No hand detected</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head collapsible" id="debug-toggle">
+              <h2>Debug &amp; Settings</h2>
+              <span class="chevron">▾</span>
+            </div>
+            <div id="debug-panel" class="panel-body debug-body">
+              <div class="control-grid">
+                <label class="toggle">
+                  <input id="toggle-landmarks" type="checkbox" checked />
+                  <span>Show landmarks</span>
+                </label>
+                <label class="toggle">
+                  <input id="toggle-skeleton" type="checkbox" checked />
+                  <span>Show skeleton</span>
+                </label>
+                <label class="toggle">
+                  <input id="toggle-labels" type="checkbox" checked />
+                  <span>Show labels</span>
+                </label>
+                <label class="toggle">
+                  <input id="toggle-coords" type="checkbox" checked />
+                  <span>Show coordinates</span>
+                </label>
+                <label class="toggle">
+                  <input id="toggle-smoothing" type="checkbox" checked />
+                  <span>Enable smoothing</span>
+                </label>
+              </div>
+              <div class="slider-row">
+                <label for="smoothing-slider">Smoothing</label>
+                <input id="smoothing-slider" type="range" min="0" max="90" step="1" value="60" />
+                <span class="slider-value" id="smoothing-value">60%</span>
+              </div>
+              <div class="slider-row">
+                <label for="cursor-slider">Cursor sensitivity</label>
+                <input id="cursor-slider" type="range" min="50" max="200" step="5" value="100" />
+                <span class="slider-value" id="cursor-value">100%</span>
+              </div>
+              <div class="slider-row inline">
+                <label for="hands-select">Hands</label>
+                <select id="hands-select">
+                  <option value="1">1</option>
+                  <option value="2" selected>2</option>
+                </select>
+                <label for="quality-select" class="inline-label">Quality</label>
+                <select id="quality-select">
+                  <option value="low">Low</option>
+                  <option value="balanced" selected>Balanced</option>
+                  <option value="high">High</option>
+                </select>
+              </div>
+              <div class="hint-block">
+                Tip: the studio runs entirely on your device. Video frames never leave the browser.
+              </div>
+            </div>
+          </div>
+        </aside>
+      </main>
+
+      <footer class="footer">
+        <span>Built with MediaPipe Tasks Vision · All processing local · No frames uploaded</span>
+      </footer>
+    </div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
